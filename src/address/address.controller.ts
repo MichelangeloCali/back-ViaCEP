@@ -8,11 +8,11 @@ export class AddressController {
 
   @Post()
   create(@Body() createAddressDto: CreateAddressDto) {
-    return this.addressService.create(createAddressDto);
+    return this.addressService.createAddress(createAddressDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.addressService.findOne(+id);
+  @Get(':cep')
+  findAddress(@Param('cep') cep: string) {
+    return this.addressService.findAddress(cep);
   }
 }

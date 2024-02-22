@@ -5,15 +5,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AddressModule } from './address/address.module';
-import { config } from './config/ormconfig';
+import { config } from './typeorm/ormconfig';
+import { RedisModule } from './redis/redis.module';
+import { RedisService } from './redis/redis.service';
 
 @Module({
   imports: [
     AddressModule,
     TypeOrmModule.forRoot(config),
     ConfigModule.forRoot(),
+    RedisModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RedisService],
 })
 export class AppModule {}

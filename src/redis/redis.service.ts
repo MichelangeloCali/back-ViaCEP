@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Address } from 'src/address/entities/address.entity';
 import { RedisRepository } from './redis.repository';
+import { CreateAddressDto } from 'src/address/dto/create-address.dto';
 
 const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
 
@@ -12,7 +13,7 @@ export class RedisService {
 
   async saveAddress(
     postalCode: string,
-    address: Omit<Address, 'id'>,
+    address: CreateAddressDto,
   ): Promise<void> {
     // Expiry is set to 1 day
     await this.redisRepository.set(

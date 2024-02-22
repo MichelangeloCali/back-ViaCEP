@@ -4,10 +4,6 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateAddressDto {
   @ApiProperty()
   @IsString()
-  id: string;
-
-  @ApiProperty()
-  @IsString()
   @Matches(/^\d{8}$/)
   cep: string;
 

@@ -5,6 +5,8 @@ import { AxiosResponse } from 'axios';
 
 import { CreateAddressDto } from './dto/create-address.dto';
 import { Address } from './entities/address.entity';
+import { AddressRepository } from './address.repository';
+import { RedisService } from 'src/redis/redis.service';
 
 type viaCepResponseType = {
   cep: string;
@@ -14,18 +16,19 @@ type viaCepResponseType = {
 };
 @Injectable()
 export class AddressService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly redisService: RedisService,
+    private readonly addressRepository: AddressRepository,
+  ) {}
 
-  async createAddress(createAddressDto: CreateAddressDto) {
-    console.log(createAddressDto);
-    return 'This action adds a new address';
+  private async createAddress(createAddressDto: CreateAddressDto) {
+    await this.addressRepository.createAddress(createAddressDto);
+    await this.redisService.saveAddress(createAddressDto.cep, createAddressDto);
+    return;
   }
 
-  async findAddress(cep: string): Promise<Omit<Address, 'id'>> {
-    return this.findAddressFromApi(cep);
-  }
-
-  async findAddressFromApi(cep: string): Promise<Omit<Address, 'id'>> {
+  private async findAddressFromApi(cep: string): Promise<Omit<Address, 'id'>> {
     try {
       const response: AxiosResponse<viaCepResponseType> = await firstValueFrom(
         this.httpService.get(`${process.env.VIA_CEP_BASE_URl}/${cep}/json`),
@@ -45,7 +48,45 @@ export class AddressService {
     }
   }
 
-  async findOneAddress(id: number) {
-    return `This action returns a #${id} address`;
+  private async findOneAddress(cep: string) {
+    return this.addressRepository.findOneAddress(cep);
+  }
+
+  async findAddress(cep: string): Promise<Omit<Address, 'id'> | void> {
+    this.validateSearch(cep);
+
+    const redisCep = await this.redisService.getAddress(cep);
+    if (redisCep) {
+      return redisCep;
+    }
+
+    const dbCep = await this.findOneAddress(cep);
+    const result = {
+      cep: dbCep.cep,
+      neighborhood: dbCep.neighborhood,
+      street: dbCep.street,
+      city: dbCep.city,
+    };
+    if (dbCep) {
+      await this.redisService.saveAddress(cep, result);
+      return result;
+    }
+
+    const viacep = await this.findAddressFromApi(cep);
+    if (!dbCep) {
+      await this.createAddress(viacep);
+    }
+    return viacep;
+  }
+
+  validateSearch(cep: string): void {
+    if (cep.length !== 8) {
+      throw new Error('CEP inválido. Um CEP válido contém 8 dígitos');
+    }
+    if (!/^\d{8}$/.test(cep)) {
+      throw new Error(
+        'CEP inválido. Um CEP válido contém apenas dígitos numéricos',
+      );
+    }
   }
 }

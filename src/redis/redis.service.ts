@@ -10,10 +10,7 @@ export class RedisService {
     @Inject(RedisRepository) private readonly redisRepository: RedisRepository,
   ) {}
 
-  async saveAddress(
-    cep: string,
-    address: Omit<Address, 'cep' | 'id'>,
-  ): Promise<void> {
+  async saveAddress(cep: string, address: Omit<Address, 'id'>): Promise<void> {
     // Expiry is set to 1 day
     await this.redisRepository.set(
       cep,
@@ -22,7 +19,7 @@ export class RedisService {
     );
   }
 
-  async getAddress(cep: string): Promise<Omit<Address, 'cep' | 'id'> | null> {
+  async getAddress(cep: string): Promise<Omit<Address, 'id'> | null> {
     const product = await this.redisRepository.get(cep);
     return JSON.parse(product);
   }

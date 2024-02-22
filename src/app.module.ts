@@ -8,6 +8,8 @@ import { AddressModule } from './address/address.module';
 import { config } from './typeorm/ormconfig';
 import { RedisModule } from './redis/redis.module';
 import { RedisService } from './redis/redis.service';
+import { RedisRepository } from './redis/redis.repository';
+import { redisClientFactory } from './redis/redis-client.factory';
 
 @Module({
   imports: [
@@ -17,6 +19,6 @@ import { RedisService } from './redis/redis.service';
     RedisModule,
   ],
   controllers: [AppController],
-  providers: [AppService, RedisService],
+  providers: [AppService, RedisService, RedisRepository, redisClientFactory],
 })
 export class AppModule {}

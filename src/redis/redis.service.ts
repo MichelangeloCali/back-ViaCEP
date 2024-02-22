@@ -10,17 +10,20 @@ export class RedisService {
     @Inject(RedisRepository) private readonly redisRepository: RedisRepository,
   ) {}
 
-  async saveAddress(cep: string, address: Omit<Address, 'id'>): Promise<void> {
+  async saveAddress(
+    postalCode: string,
+    address: Omit<Address, 'id'>,
+  ): Promise<void> {
     // Expiry is set to 1 day
     await this.redisRepository.set(
-      cep,
+      postalCode,
       JSON.stringify(address),
       ONE_DAY_IN_SECONDS,
     );
   }
 
-  async getAddress(cep: string): Promise<Omit<Address, 'id'> | null> {
-    const product = await this.redisRepository.get(cep);
+  async getAddress(postalCode: string): Promise<Omit<Address, 'id'> | null> {
+    const product = await this.redisRepository.get(postalCode);
     return JSON.parse(product);
   }
 }

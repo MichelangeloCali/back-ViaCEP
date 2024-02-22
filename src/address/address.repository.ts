@@ -16,7 +16,7 @@ export class AddressRepository {
     return await this.addressRepository.save(newAddress);
   }
 
-  async findOneAddress(cep: string): Promise<Address | undefined> {
-    return await this.addressRepository.findOne({ where: { cep } });
+  async findOneAddress(postalCode: string): Promise<Address | undefined> {
+    return await this.addressRepository.findOne({ where: { postalCode } });
   }
 }

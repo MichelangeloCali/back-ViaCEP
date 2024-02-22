@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
@@ -13,6 +13,7 @@ type viaCepResponseType = {
   logradouro: string;
   bairro: string;
   localidade: string;
+  erro?: 'true' | 'false';
 };
 
 type AddressResponse =
@@ -29,18 +30,29 @@ export class AddressService {
 
   private async createAddress(createAddressDto: CreateAddressDto) {
     await this.addressRepository.createAddress(createAddressDto);
-    await this.redisService.saveAddress(createAddressDto.cep, createAddressDto);
+    await this.redisService.saveAddress(
+      createAddressDto.postalCode,
+      createAddressDto,
+    );
     return;
   }
 
-  private async findAddressFromApi(cep: string): Promise<Omit<Address, 'id'>> {
+  private async findAddressFromApi(
+    postalCode: string,
+  ): Promise<Omit<Address, 'id'>> {
     try {
       const response: AxiosResponse<viaCepResponseType> = await firstValueFrom(
-        this.httpService.get(`${process.env.VIA_CEP_BASE_URl}/${cep}/json`),
+        this.httpService.get(
+          `${process.env.VIA_CEP_BASE_URl}/${postalCode}/json`,
+        ),
       );
 
+      if (response.data.erro === 'true') {
+        throw new BadRequestException('Não foi encontrado um CEP');
+      }
+
       const result = {
-        cep: response.data.cep.replace('-', ''),
+        postalCode: response.data.cep.replace('-', ''),
         neighborhood: response.data.bairro,
         street: response.data.logradouro,
         city: response.data.localidade,
@@ -49,39 +61,36 @@ export class AddressService {
       return result;
     } catch (error) {
       console.error(error);
-      throw new HttpException(
-        'Erro ao buscar CEP, tente outro CEP.',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestException('Erro ao buscar CEP, tente outro CEP.');
     }
   }
 
-  private async findOneAddress(cep: string) {
-    return this.addressRepository.findOneAddress(cep);
+  private async findOneAddress(postalCode: string) {
+    return this.addressRepository.findOneAddress(postalCode);
   }
 
-  async findAddress(cep: string): Promise<AddressResponse> {
+  async findAddress(postalCode: string): Promise<AddressResponse> {
     try {
-      this.validateSearch(cep);
+      this.validateSearch(postalCode);
 
-      const redisCep = await this.redisService.getAddress(cep);
+      const redisCep = await this.redisService.getAddress(postalCode);
       if (redisCep) {
         return redisCep;
       }
 
-      const dbCep = await this.findOneAddress(cep);
+      const dbCep = await this.findOneAddress(postalCode);
       if (dbCep) {
         const result = {
-          cep: dbCep.cep,
+          postalCode: dbCep.postalCode,
           neighborhood: dbCep.neighborhood,
           street: dbCep.street,
           city: dbCep.city,
         };
-        await this.redisService.saveAddress(cep, result);
+        await this.redisService.saveAddress(postalCode, result);
         return result;
       }
 
-      const viacep = await this.findAddressFromApi(cep);
+      const viacep = await this.findAddressFromApi(postalCode);
       if (!dbCep) {
         await this.createAddress(viacep);
       }
@@ -94,19 +103,16 @@ export class AddressService {
         };
       } else {
         console.error(error);
-        throw new HttpException(
-          'Erro interno do servidor',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new BadRequestException('Erro interno do servidor');
       }
     }
   }
 
-  validateSearch(cep: string): void {
-    if (cep.length !== 8) {
+  validateSearch(postalCode: string): void {
+    if (postalCode.length !== 8) {
       throw new Error('CEP inválido. Um CEP válido contém 8 dígitos');
     }
-    if (!/^\d{8}$/.test(cep)) {
+    if (!/^\d{8}$/.test(postalCode)) {
       throw new Error(
         'CEP inválido. Um CEP válido contém apenas dígitos numéricos',
       );

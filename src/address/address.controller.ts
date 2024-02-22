@@ -5,8 +5,8 @@ import { AddressService } from './address.service';
 export class AddressController {
   constructor(private readonly addressService: AddressService) {}
 
-  @Get(':cep')
-  findAddress(@Param('cep') cep: string) {
-    return this.addressService.findAddress(cep);
+  @Get(':postalCode')
+  findAddress(@Param('postalCode') postalCode: string) {
+    return this.addressService.findAddress(postalCode);
   }
 }

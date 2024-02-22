@@ -6,7 +6,7 @@ export class Address {
   id: string;
 
   @Column()
-  cep: string;
+  postalCode: string;
 
   @Column()
   street: string;

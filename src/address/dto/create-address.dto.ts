@@ -5,7 +5,7 @@ export class CreateAddressDto {
   @ApiProperty()
   @IsString()
   @Matches(/^\d{8}$/)
-  cep: string;
+  postalCode: string;
 
   @ApiProperty()
   @IsString()

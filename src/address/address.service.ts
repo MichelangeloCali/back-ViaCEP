@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
@@ -14,6 +14,11 @@ type viaCepResponseType = {
   bairro: string;
   localidade: string;
 };
+
+type AddressResponse =
+  | Omit<Address, 'id'>
+  | { statusCode: number; message: string };
+
 @Injectable()
 export class AddressService {
   constructor(
@@ -44,7 +49,10 @@ export class AddressService {
       return result;
     } catch (error) {
       console.error(error);
-      throw new Error('Erro ao obter endereço do CEP');
+      throw new HttpException(
+        'Erro ao buscar CEP, tente outro CEP.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
@@ -52,31 +60,46 @@ export class AddressService {
     return this.addressRepository.findOneAddress(cep);
   }
 
-  async findAddress(cep: string): Promise<Omit<Address, 'id'> | void> {
-    this.validateSearch(cep);
+  async findAddress(cep: string): Promise<AddressResponse> {
+    try {
+      this.validateSearch(cep);
 
-    const redisCep = await this.redisService.getAddress(cep);
-    if (redisCep) {
-      return redisCep;
-    }
+      const redisCep = await this.redisService.getAddress(cep);
+      if (redisCep) {
+        return redisCep;
+      }
 
-    const dbCep = await this.findOneAddress(cep);
-    const result = {
-      cep: dbCep.cep,
-      neighborhood: dbCep.neighborhood,
-      street: dbCep.street,
-      city: dbCep.city,
-    };
-    if (dbCep) {
-      await this.redisService.saveAddress(cep, result);
-      return result;
-    }
+      const dbCep = await this.findOneAddress(cep);
+      if (dbCep) {
+        const result = {
+          cep: dbCep.cep,
+          neighborhood: dbCep.neighborhood,
+          street: dbCep.street,
+          city: dbCep.city,
+        };
+        await this.redisService.saveAddress(cep, result);
+        return result;
+      }
 
-    const viacep = await this.findAddressFromApi(cep);
-    if (!dbCep) {
-      await this.createAddress(viacep);
+      const viacep = await this.findAddressFromApi(cep);
+      if (!dbCep) {
+        await this.createAddress(viacep);
+      }
+      return viacep;
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: error.message,
+        };
+      } else {
+        console.error(error);
+        throw new HttpException(
+          'Erro interno do servidor',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
-    return viacep;
   }
 
   validateSearch(cep: string): void {

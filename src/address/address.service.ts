@@ -6,7 +6,7 @@ import { AxiosResponse } from 'axios';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { Address } from './entities/address.entity';
 import { AddressRepository } from './address.repository';
-import { RedisService } from 'src/redis/redis.service';
+import { RedisService } from '../redis/redis.service';
 
 type viaCepResponseType = {
   cep: string;

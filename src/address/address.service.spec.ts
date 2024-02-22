@@ -1,14 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpModule } from '@nestjs/axios';
 
 import { AddressService } from './address.service';
 import { AddressRepository } from './address.repository';
+import { RedisService } from '../redis/redis.service';
 
 describe('AddressService', () => {
   let service: AddressService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AddressService, AddressRepository],
+      imports: [HttpModule],
+      providers: [AddressService, AddressRepository, RedisService],
     }).compile();
 
     service = module.get<AddressService>(AddressService);

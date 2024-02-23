@@ -75,7 +75,17 @@ $ npm run test:cov
 
 <img width="441" alt="image" src="https://github.com/MichelangeloCali/back-ViaCEP/assets/90471567/92e8f1cc-5d44-4c04-877b-68dd68a88ceb">
 
+## Obsservação:
+- Rode este projeto backend antes de rodar o projeto frontend localmente.
+- Crie o arquivo `.env` na raiz do projeto backend, com as seguintes variáveis de ambiente:
+```
+VIA_CEP_BASE_URl="https://viacep.com.br/ws"
 
+REDIS_PORT=
+REDIS_HOST=
+REDIS_KEY=
+REDIS_PASSWORD=
+```
 
 ### Contato do desenvolvedor:
 

@@ -36,4 +36,72 @@ describe('AddressService', () => {
     expect(redisService).toBeDefined();
     expect(httpService).toBeDefined();
   });
+
+  describe('findAddress', () => {
+    it('should return data from redis', async () => {
+      const postalCode = '00000000';
+
+      const result = await service.findAddress(postalCode);
+
+      expect(redisService.getAddress).toHaveBeenCalledWith(postalCode);
+      expect(result).toEqual({
+        postalCode,
+        street: 'Test Street Redis',
+        neighborhood: 'Test Neighborhood Redis',
+        city: 'Test City Redis',
+      });
+      expect(addressRepository.findOneAddress).not.toHaveBeenCalled();
+      expect(httpService.get).not.toHaveBeenCalled();
+    });
+
+    it('should return data from data base', async () => {
+      const postalCode = '11111111';
+
+      const result = await service.findAddress(postalCode);
+
+      expect(redisService.getAddress).toHaveBeenCalledWith(postalCode);
+      expect(addressRepository.findOneAddress).toHaveBeenCalledWith(postalCode);
+      expect(result).toEqual({
+        postalCode,
+        street: 'Test Street DB',
+        neighborhood: 'Test Neighborhood DB',
+        city: 'Test City DB',
+      });
+      expect(redisService.saveAddress).toHaveBeenCalledWith(postalCode, result);
+      expect(httpService.get).not.toHaveBeenCalled();
+    });
+
+    //
+    // it('should return data from viacep api', async () => {
+    //   const postalCode = '80010030';
+    //   const expectedUrl = `https://viacep.com.br/ws/${postalCode}/json`;
+
+    //   const viaCepResponse = {
+    //     cep: '80010030',
+    //     logradouro: 'Test Street',
+    //     bairro: 'Test Neighborhood',
+    //     localidade: 'Test City',
+    //   };
+
+    //   jest.spyOn(HttpServiceMock, 'get').mockReturnValueOnce(
+    //     Promise.resolve({
+    //       data: viaCepResponse,
+    //     }),
+    //   );
+
+    //   const result = await service.findAddress(postalCode);
+
+    //   expect(redisService.getAddress).toHaveBeenCalledWith(postalCode);
+    //   expect(addressRepository.findOneAddress).toHaveBeenCalledWith(postalCode);
+    //   expect(httpService.get).toHaveBeenCalledWith(expectedUrl);
+    //   expect(result).toEqual({
+    //     postalCode,
+    //     street: viaCepResponse.logradouro,
+    //     neighborhood: viaCepResponse.bairro,
+    //     city: viaCepResponse.localidade,
+    //   });
+    //   expect(addressRepository.createAddress).toHaveBeenCalledWith(result);
+    //   expect(redisService.saveAddress).toHaveBeenCalledWith(postalCode, result);
+    // });
+  });
 });

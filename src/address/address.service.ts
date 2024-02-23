@@ -74,9 +74,7 @@ export class AddressService {
       this.validateSearch(postalCode);
 
       const redisCep = await this.redisService.getAddress(postalCode);
-      if (redisCep) {
-        return redisCep;
-      }
+      if (redisCep) return redisCep;
 
       const dbCep = await this.findOneAddress(postalCode);
       if (dbCep) {

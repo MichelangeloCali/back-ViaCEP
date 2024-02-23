@@ -4,11 +4,13 @@ export class RedisServiceMock {
   saveAddress = jest.fn().mockImplementation();
 
   getAddress = jest.fn().mockImplementation((postalCode: string) => {
-    return {
-      postalCode,
-      street: 'Test Street',
-      neighborhood: 'Test Neighborhood',
-      city: 'Test City',
-    };
+    if (postalCode === '00000000') {
+      return {
+        postalCode,
+        street: 'Test Street Redis',
+        neighborhood: 'Test Neighborhood Redis',
+        city: 'Test City Redis',
+      };
+    }
   });
 }

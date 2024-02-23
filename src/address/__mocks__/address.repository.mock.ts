@@ -13,11 +13,13 @@ export class AddressRepositoryMock {
     });
 
   findOneAddress = jest.fn().mockImplementation((postalCode: string) => {
-    return {
-      postalCode,
-      street: 'Test Street',
-      neighborhood: 'Test Neighborhood',
-      city: 'Test City',
-    };
+    if (postalCode === '11111111') {
+      return {
+        postalCode,
+        street: 'Test Street DB',
+        neighborhood: 'Test Neighborhood DB',
+        city: 'Test City DB',
+      };
+    }
   });
 }
